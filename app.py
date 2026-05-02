@@ -6,7 +6,7 @@ import io, base64, requests
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="ajugarconia", page_icon="📜")
 
-# Estilo visual adaptado a tu Nexo de Poder
+# Estilo visual para tu Nexo
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: #e0e0e0; }
@@ -15,10 +15,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- PANEL DE CONTROL (BARRA LATERAL) ---
+# --- PANEL DE CONTROL ---
 with st.sidebar:
     st.title("⚔️ Nexo de Poder")
-    # El .strip() elimina automáticamente espacios invisibles (evita Error 400)
     g_raw = st.text_input("Gemini API Key:", type="password")
     g_key = g_raw.strip() if g_raw else None
     
@@ -41,18 +40,22 @@ if "chat" not in st.session_state: st.session_state.chat = []
 
 def procesar_evento(texto, imagen_b64=None):
     if not g_key:
-        st.error("❌ No hay API Key válida en el Nexo.")
+        st.error("❌ No hay API Key válida.")
         return
     try:
         genai.configure(api_key=g_key)
-        # SOLUCIÓN AL 404: Se usa el nombre técnico completo del modelo
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
         
-        prompt_sistema = f"Actúa como el Archivista de {juego}. Eres un narrador inmersivo y experto estratega. Analiza y responde: {texto}"
+        # CAMBIO CLAVE: Usamos 'gemini-pro' o 'gemini-1.5-flash-latest' para máxima compatibilidad
+        # Si uno falla, el sistema intentará el otro
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        except:
+            model = genai.GenerativeModel('gemini-pro')
+        
+        prompt_sistema = f"Actúa como el Archivista de {juego}. Narrador épico y experto. {texto}"
         cuerpo = [prompt_sistema]
         
         if imagen_b64:
-            # Procesamiento de imagen seguro para la nube
             img_data = base64.b64decode(imagen_b64.split(",")[1])
             img = Image.open(io.BytesIO(img_data))
             cuerpo.append(img)
@@ -62,7 +65,6 @@ def procesar_evento(texto, imagen_b64=None):
             st.session_state.chat.append({"role": "user", "content": texto})
             st.session_state.chat.append({"role": "assistant", "content": res.text})
             
-            # Voz opcional con ElevenLabs
             if e_key and len(e_key) > 5:
                 try:
                     url = "https://api.elevenlabs.io/v1/text-to-speech/CwhSss6Y92671G8AbaQ1"
@@ -73,12 +75,11 @@ def procesar_evento(texto, imagen_b64=None):
     except Exception as e:
         st.error(f"⚠️ Error en el Nexo: {e}")
 
-# --- INTERFAZ PRINCIPAL ---
+# --- INTERFAZ ---
 col_vis, col_cro = st.columns([1.2, 1])
 
 with col_vis:
-    st.subheader("👁️ Visión del Archivista")
-    # Componente HTML para capturar Pantalla y Micrófono
+    st.subheader("👁️ Visión")
     st.components.v1.html("""
     <div style="background:#1a1a1a; padding:10px; border-radius:10px; border:1px solid #d4af37;">
         <video id="vid" autoplay style="width:100%; border-radius:5px; background:black"></video>
@@ -106,22 +107,18 @@ with col_vis:
     """, height=440)
     
     st.markdown("---")
-    # Chat manual para cuando no quieras o puedas usar el micro
-    st.write("⌨️ **Mensaje Manual**")
     with st.form("chat_manual", clear_on_submit=True):
         m_txt = st.text_input("Escribe al Archivista...")
         if st.form_submit_button("Enviar Mensaje") and m_txt:
             procesar_evento(m_txt)
 
 with col_cro:
-    st.subheader("📜 Crónicas del Reino")
-    # Capturar datos de voz/imagen enviados desde el componente HTML
+    st.subheader("📜 Crónicas")
     voz = st.session_state.get('datos_voz')
     if voz and (st.session_state.get('l_id') != voz['id']):
         st.session_state.l_id = voz['id']
         procesar_evento(voz['t'], voz['f'])
 
-    # Mostrar historial de mensajes
     for m in st.session_state.chat[::-1]:
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
