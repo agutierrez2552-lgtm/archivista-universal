@@ -3,56 +3,37 @@ import google.generativeai as genai
 from PIL import Image
 import io
 
-# Configuración de página
 st.set_page_config(layout="wide", page_title="ajugarconia")
 st.markdown("<style>.stApp { background-color: #0e1117; color: white; }</style>", unsafe_allow_html=True)
 
 # --- PANEL DE CONTROL ---
 with st.sidebar:
     st.title("⚔️ Nexo de Poder")
-    # El .strip() limpia espacios invisibles
     g_key = st.text_input("Gemini API Key:", type="password").strip()
-    juego = st.selectbox("Juego:", ["Gloomhaven", "Marvel Champions", "D&D 5e", "Las Mansiones de la Locura"])
+    juego = st.selectbox("Juego:", ["Gloomhaven", "Marvel Champions", "D&D 5e"])
     if st.button("🔮 Despertar"):
-        st.success("¡Nexo vinculado!")
+        st.success("Nexo listo")
 
-if "chat" not in st.session_state: 
-    st.session_state.chat = []
+if "chat" not in st.session_state: st.session_state.chat = []
 
-# --- LÓGICA DE PROCESAMIENTO REFORZADA ---
-def procesar_mensaje():
+# --- PROCESAMIENTO SIN BETA ---
+def procesar():
     texto = st.session_state.input_usuario
     if texto and g_key:
         try:
+            # Configuración limpia
             genai.configure(api_key=g_key)
             
-            # SOLUCIÓN AL 404: Usamos el nombre de modelo más moderno y compatible
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            # Forzamos el modelo pro que es el más compatible universalmente
+            model = genai.GenerativeModel('gemini-pro')
             
-            # Prompt directo
-            prompt = f"Actúa como el Archivista de {juego}. Narrador épico. Responde: {texto}"
-            
-            with st.spinner("Consultando los tomos antiguos..."):
-                response = model.generate_content(prompt)
-                
-                # Guardar historial
-                st.session_state.chat.append({"role": "user", "content": texto})
-                st.session_state.chat.append({"role": "assistant", "content": response.text})
-                
-                # Limpiar entrada
-                st.session_state.input_usuario = ""
-        except Exception as e:
-            # Si el 'flash-latest' falla, intentamos con el nombre base
-            try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
+            with st.spinner("El Archivista responde..."):
                 response = model.generate_content(f"Eres el Archivista de {juego}. {texto}")
                 st.session_state.chat.append({"role": "user", "content": texto})
                 st.session_state.chat.append({"role": "assistant", "content": response.text})
                 st.session_state.input_usuario = ""
-            except Exception as e2:
-                st.error(f"Error técnico persistente: {e2}")
-    elif not g_key:
-        st.warning("⚠️ Pegá tu API Key en el panel izquierdo.")
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 # --- INTERFAZ ---
 col_v, col_c = st.columns([1.1, 1])
@@ -68,9 +49,7 @@ with col_v:
         </button>
     </div>
     """, height=380)
-    
-    st.markdown("---")
-    st.text_input("Escribe al Archivista...", key="input_usuario", on_change=procesar_mensaje)
+    st.text_input("Escribe aquí...", key="input_usuario", on_change=procesar)
 
 with col_c:
     st.subheader("📜 Crónicas")
