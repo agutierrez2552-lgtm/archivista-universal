@@ -3,53 +3,46 @@ import google.generativeai as genai
 from PIL import Image
 import io, base64, requests
 
-# --- CONFIGURACIÓN BASE ---
-st.set_page_config(layout="wide", page_title="ajugarconia", page_icon="📜")
+st.set_page_config(layout="wide", page_title="ajugarconia")
 
-# Estilo para que combine con tu ludoteca
+# --- ESTILO ---
 st.markdown("<style>.stApp { background-color: #0e1117; color: white; }</style>", unsafe_allow_html=True)
 
-# --- PANEL DE CONTROL ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("⚔️ Nexo de Poder")
-    # El .strip() es la clave: limpia la API Key de espacios accidentales
+    # Limpieza de API Key para evitar error 400
     g_raw = st.text_input("Gemini API Key:", type="password")
     g_key = g_raw.strip() if g_raw else None
     
-    e_raw = st.text_input("ElevenLabs API Key (Opcional):", type="password")
+    e_raw = st.text_input("ElevenLabs API Key:", type="password")
     e_key = e_raw.strip() if e_raw else None
     
-    juego = st.selectbox("Juego:", ["Gloomhaven", "Marvel Champions", "Las Mansiones de la Locura", "D&D 5e"])
-    
-    if st.button("🔮 Despertar al Archivista"):
-        if g_key and g_key.startswith("AIza"):
-            st.session_state.ready = True
-            st.balloons()
-            st.success("¡El Archivista ha despertado!")
-        else:
-            st.error("Revisá la Gemini Key (debe empezar con AIza)")
+    juego = st.selectbox("Juego:", ["Gloomhaven", "Marvel Champions", "D&D 5e"])
+    if st.button("🔮 Despertar"):
+        st.session_state.ready = True
+        st.balloons()
 
-# --- LÓGICA DE PROCESAMIENTO ---
+# --- LÓGICA DE PROCESAMIENTO (ACTUALIZADA) ---
 if "chat" not in st.session_state: st.session_state.chat = []
 
 def procesar_evento(texto, img_b64=None):
     if not g_key:
-        st.error("❌ No hay API Key válida.")
+        st.error("Falta API Key")
         return
     try:
         genai.configure(api_key=g_key)
+        # SOLUCIÓN AL ERROR 404: Usamos el prefijo 'models/'
         model = genai.GenerativeModel('models/gemini-1.5-flash')
         
-        # Prompt épico para tus juegos
-        prompt = f"Actúa como el Archivista de {juego}. Eres un narrador inmersivo. Analiza y responde: {texto}"
-        cuerpo = [prompt]
+        cuerpo = [f"Actúa como el Archivista de {juego}. {texto}"]
         
         if img_b64:
             img_data = base64.b64decode(img_b64.split(",")[1])
             img = Image.open(io.BytesIO(img_data))
             cuerpo.append(img)
             
-        with st.spinner("Consultando los tomos antiguos..."):
+        with st.spinner("El Archivista está pensando..."):
             res = model.generate_content(cuerpo)
             st.session_state.chat.append({"role": "user", "content": texto})
             st.session_state.chat.append({"role": "assistant", "content": res.text})
@@ -68,7 +61,7 @@ def procesar_evento(texto, img_b64=None):
 col_v, col_c = st.columns([1.2, 1])
 
 with col_v:
-    st.subheader("👁️ Visión del Archivista")
+    st.subheader("👁️ Visión")
     st.components.v1.html("""
     <div style="background:#1a1a1a; padding:10px; border-radius:10px; border:1px solid #d4af37;">
         <video id="vid" autoplay style="width:100%; border-radius:5px;"></video>
@@ -93,13 +86,13 @@ with col_v:
     </script>
     """, height=440)
     
-    with st.form("chat_manual", clear_on_submit=True):
+    with st.form("f_manual", clear_on_submit=True):
         m_txt = st.text_input("Escribe al Archivista...")
-        if st.form_submit_button("Enviar Mensaje") and m_txt:
+        if st.form_submit_button("Enviar") and m_txt:
             procesar_evento(m_txt)
 
 with col_c:
-    st.subheader("📜 Crónicas del Reino")
+    st.subheader("📜 Crónicas")
     voz = st.session_state.get('datos_voz')
     if voz and (st.session_state.get('l_id') != voz['id']):
         st.session_state.l_id = voz['id']
