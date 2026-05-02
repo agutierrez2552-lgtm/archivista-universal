@@ -38,7 +38,7 @@ def procesar_evento(texto, img_b64=None):
         return
     try:
         genai.configure(api_key=g_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         
         # Prompt épico para tus juegos
         prompt = f"Actúa como el Archivista de {juego}. Eres un narrador inmersivo. Analiza y responde: {texto}"
