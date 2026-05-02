@@ -6,7 +6,7 @@ import io, base64, requests
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="ajugarconia", page_icon="📜")
 
-# Estilo visual para tu Nexo
+# Estilo visual para tu Nexo de Poder
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: #e0e0e0; }
@@ -15,7 +15,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- PANEL DE CONTROL ---
+# --- PANEL DE CONTROL (BARRA LATERAL) ---
 with st.sidebar:
     st.title("⚔️ Nexo de Poder")
     g_raw = st.text_input("Gemini API Key:", type="password")
@@ -25,7 +25,7 @@ with st.sidebar:
     e_key = e_raw.strip() if e_raw else None
     
     juego = st.selectbox("¿Qué leyenda narramos?", 
-                        ["Gloomhaven", "Las Mansiones de la Locura", "Descent", "Marvel Champions", "D&D 5e"])
+                        ["Gloomhaven", "Marvel Champions", "Las Mansiones de la Locura", "D&D 5e"])
     
     if st.button("🔮 Despertar al Archivista"):
         if g_key and g_key.startswith("AIza"):
@@ -45,10 +45,14 @@ def procesar_evento(texto, imagen_b64=None):
     try:
         genai.configure(api_key=g_key)
         
-        # CAMBIO CLAVE: Usamos el nombre base del modelo
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # SOLUCIÓN AL 404: Intentamos con el nombre técnico completo
+        # Si falla el flash, intentamos con el pro
+        try:
+            model = genai.GenerativeModel('models/gemini-1.5-flash')
+        except:
+            model = genai.GenerativeModel('models/gemini-pro')
         
-        prompt_sistema = f"Actúa como el Archivista de {juego}. Narrador épico y experto. {texto}"
+        prompt_sistema = f"Actúa como el Archivista de {juego}. Eres un narrador inmersivo. Analiza y responde: {texto}"
         cuerpo = [prompt_sistema]
         
         if imagen_b64:
@@ -57,7 +61,6 @@ def procesar_evento(texto, imagen_b64=None):
             cuerpo.append(img)
             
         with st.spinner("El Archivista está consultando los tomos antiguos..."):
-            # Quitamos la dependencia de versiones beta si es posible
             res = model.generate_content(cuerpo)
             st.session_state.chat.append({"role": "user", "content": texto})
             st.session_state.chat.append({"role": "assistant", "content": res.text})
@@ -72,11 +75,11 @@ def procesar_evento(texto, imagen_b64=None):
     except Exception as e:
         st.error(f"⚠️ Error en el Nexo: {e}")
 
-# --- INTERFAZ ---
+# --- INTERFAZ PRINCIPAL ---
 col_vis, col_cro = st.columns([1.2, 1])
 
 with col_vis:
-    st.subheader("👁️ Visión")
+    st.subheader("👁️ Visión del Archivista")
     st.components.v1.html("""
     <div style="background:#1a1a1a; padding:10px; border-radius:10px; border:1px solid #d4af37;">
         <video id="vid" autoplay style="width:100%; border-radius:5px; background:black"></video>
@@ -110,7 +113,7 @@ with col_vis:
             procesar_evento(m_txt)
 
 with col_cro:
-    st.subheader("📜 Crónicas")
+    st.subheader("📜 Crónicas del Reino")
     voz = st.session_state.get('datos_voz')
     if voz and (st.session_state.get('l_id') != voz['id']):
         st.session_state.l_id = voz['id']
