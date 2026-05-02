@@ -39,7 +39,7 @@ def procesar_evento(texto, imagen_b64):
 
     try:
         genai.configure(api_key=g_key)
-        model = genai.GenerativeModel('gemini-1.5-flash', 
+        model = genai.GenerativeModel('gemini-pro-vision', 
                                      system_instruction=f"Eres el Archivista de {juego}. Narrador épico y experto.")
         
         # Preparar imagen si existe
