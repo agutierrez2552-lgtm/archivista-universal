@@ -45,12 +45,8 @@ def procesar_evento(texto, imagen_b64=None):
     try:
         genai.configure(api_key=g_key)
         
-        # CAMBIO CLAVE: Usamos 'gemini-pro' o 'gemini-1.5-flash-latest' para máxima compatibilidad
-        # Si uno falla, el sistema intentará el otro
-        try:
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        except:
-            model = genai.GenerativeModel('gemini-pro')
+        # CAMBIO CLAVE: Usamos el nombre base del modelo
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt_sistema = f"Actúa como el Archivista de {juego}. Narrador épico y experto. {texto}"
         cuerpo = [prompt_sistema]
@@ -61,6 +57,7 @@ def procesar_evento(texto, imagen_b64=None):
             cuerpo.append(img)
             
         with st.spinner("El Archivista está consultando los tomos antiguos..."):
+            # Quitamos la dependencia de versiones beta si es posible
             res = model.generate_content(cuerpo)
             st.session_state.chat.append({"role": "user", "content": texto})
             st.session_state.chat.append({"role": "assistant", "content": res.text})
