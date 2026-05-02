@@ -117,3 +117,10 @@ with col_cro:
     for m in st.session_state.chat[::-1]:
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
+# Voz opcional - Si falla o no hay clave, que no rompa el resto
+if e_key:
+    try:
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/CwhSss6Y92671G8AbaQ1"
+        requests.post(url, json={"text": texto_final, "model_id": "eleven_multilingual_v2"}, headers={"xi-api-key": e_key})
+    except:
+        st.warning("No se pudo generar el audio, pero la crónica se guardó.")
