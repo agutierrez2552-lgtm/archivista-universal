@@ -1,17 +1,16 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import io, base64
+import io
 
-# Configuración básica
+# Configuración de página
 st.set_page_config(layout="wide", page_title="ajugarconia")
-
-# Estilo visual
 st.markdown("<style>.stApp { background-color: #0e1117; color: white; }</style>", unsafe_allow_html=True)
 
 # --- PANEL DE CONTROL ---
 with st.sidebar:
     st.title("⚔️ Nexo de Poder")
+    # El .strip() limpia espacios invisibles
     g_key = st.text_input("Gemini API Key:", type="password").strip()
     juego = st.selectbox("Juego:", ["Gloomhaven", "Marvel Champions", "D&D 5e", "Las Mansiones de la Locura"])
     if st.button("🔮 Despertar"):
@@ -20,29 +19,40 @@ with st.sidebar:
 if "chat" not in st.session_state: 
     st.session_state.chat = []
 
-# --- FUNCIÓN DE PROCESAMIENTO REFORZADA ---
+# --- LÓGICA DE PROCESAMIENTO REFORZADA ---
 def procesar_mensaje():
     texto = st.session_state.input_usuario
     if texto and g_key:
         try:
             genai.configure(api_key=g_key)
             
-            # PLAN A y PLAN B para evitar el error 404
+            # SOLUCIÓN AL 404: Usamos el nombre de modelo más moderno y compatible
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            
+            # Prompt directo
+            prompt = f"Actúa como el Archivista de {juego}. Narrador épico. Responde: {texto}"
+            
+            with st.spinner("Consultando los tomos antiguos..."):
+                response = model.generate_content(prompt)
+                
+                # Guardar historial
+                st.session_state.chat.append({"role": "user", "content": texto})
+                st.session_state.chat.append({"role": "assistant", "content": response.text})
+                
+                # Limpiar entrada
+                st.session_state.input_usuario = ""
+        except Exception as e:
+            # Si el 'flash-latest' falla, intentamos con el nombre base
             try:
                 model = genai.GenerativeModel('gemini-1.5-flash')
-                res = model.generate_content(f"Actúa como el Archivista de {juego}. {texto}")
-            except:
-                # Si el servidor es viejo, este nombre suele funcionar siempre
-                model = genai.GenerativeModel('gemini-pro')
-                res = model.generate_content(f"Actúa como el Archivista de {juego}. {texto}")
-            
-            st.session_state.chat.append({"role": "user", "content": texto})
-            st.session_state.chat.append({"role": "assistant", "content": res.text})
-            st.session_state.input_usuario = ""
-        except Exception as e:
-            st.error(f"Error técnico: {e}")
+                response = model.generate_content(f"Eres el Archivista de {juego}. {texto}")
+                st.session_state.chat.append({"role": "user", "content": texto})
+                st.session_state.chat.append({"role": "assistant", "content": response.text})
+                st.session_state.input_usuario = ""
+            except Exception as e2:
+                st.error(f"Error técnico persistente: {e2}")
     elif not g_key:
-        st.warning("⚠️ Pegá la Gemini Key a la izquierda.")
+        st.warning("⚠️ Pegá tu API Key en el panel izquierdo.")
 
 # --- INTERFAZ ---
 col_v, col_c = st.columns([1.1, 1])
