@@ -1,9 +1,10 @@
 import streamlit as st
 import google.generativeai as genai
 
-# Configuración de página
+# Configuración básica
 st.set_page_config(page_title="ajugarconia", layout="centered")
 
+# Estilo para tu Nexo
 st.markdown("<style>.stApp { background-color: #0e1117; color: white; }</style>", unsafe_allow_html=True)
 st.title("⚔️ Nexo de Poder")
 
@@ -12,18 +13,17 @@ with st.sidebar:
     st.subheader("Configuración")
     g_key = st.text_input("Gemini API Key:", type="password").strip()
     juego = st.selectbox("Juego:", ["Gloomhaven", "Marvel Champions", "D&D 5e"])
-    st.info("Pegá la clave y escribí abajo.")
 
 if "chat" not in st.session_state:
     st.session_state.chat = []
 
-# --- LÓGICA DE RESPUESTA ---
+# --- FUNCIÓN DE RESPUESTA ---
 def enviar():
     texto = st.session_state.input_usuario
     if texto and g_key:
         try:
             genai.configure(api_key=g_key)
-            # Usamos el modelo Pro por estabilidad en Python 3.14
+            # 'gemini-pro' es el nombre más estable para la versión 0.4.1 de la librería
             model = genai.GenerativeModel('gemini-pro')
             
             with st.spinner("El Archivista está escribiendo..."):
